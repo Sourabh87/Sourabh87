@@ -1,1 +1,57 @@
+import tweepy
+import csv
 
+#Twitter API credentials
+consumer_key = " "
+consumer_secret = " "
+access_key = " "
+access_secret = " "
+
+#Here you can insert multiple user handles in place of handle 1, handle 2 and can add more.
+handles_list = ["handle 1", "handle 2"]
+
+
+def get_all_tweets(screen_name, writer):
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_key, access_secret)
+    api = tweepy.API(auth)
+  
+    #initialize a list to hold all the tweepy Tweets
+    alltweets = []  
+    
+    #make initial request for most recent tweets (200 is the maximum allowed count)
+    new_tweets = api.user_timeline(screen_name = handle,count=200)
+    
+    #save most recent tweets
+    alltweets.extend(new_tweets)
+    
+    #save the id of the oldest tweet less one
+    oldest = alltweets[-1].id - 1
+    
+    #keep grabbing tweets until there are no tweets left to grab
+    while len(new_tweets) > 0:
+        print(f"getting tweets before {oldest}")
+        
+        #all subsiquent requests use the max_id param to prevent duplicates
+        new_tweets = api.user_timeline(screen_name = handle,count=200,max_id=oldest)
+        
+        #save most recent tweets
+        alltweets.extend(new_tweets)
+        
+        #update the id of the oldest tweet less one
+        oldest = alltweets[-1].id - 1
+        
+        print(f"...{len(alltweets)} tweets downloaded so far")
+    
+    Resultingtweets= [[tweet.user.name, tweet.user.screen_name, tweet.user.description, tweet.id_str, tweet.created_at, tweet.text.encode("utf-8")] for tweet in alltweets]
+
+    writer.writerow(["User Name","Twitter_Handle","Twitter_User_Description","tweet_id","created_at","Tweet_text"])
+    writer.writerows(Resultingtweets)
+
+if __name__ == '__main__':
+    with open('All Tweets_multiple users.csv', 'w', encoding='utf-8') as f_all:
+        writer = csv.writer(f_all)
+
+        for handle in handles_list:
+            get_all_tweets("handles", writer)
+            print ("Done.")
